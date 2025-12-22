@@ -6,11 +6,10 @@ import {
   getWalletBalance,
   makeRandomAddress,
   makeWalletAddress,
-} from "./services/ethers.js";
+} from "./services/chain.js";
+import { refundBalance } from "./services/poolWallet.js";
 
 const router = express.Router();
-
-// makeRandomAddress()
 
 router.post("/api/room", async (req, res) => {
   // "number_of_players": 4,
@@ -125,12 +124,12 @@ router.post("/api/room/start", async (req, res) => {
   let status = "STARTED";
 
   for (let it of players) {
-    let amount = await getWalletBalance(it.poolAddress);
-    if (it.amount !== amount) {
-      await Players.findByIdAndUpdate(it._id, { amount });
-      it.amount = amount;
+    let walletBalance = await getWalletBalance(it.poolAddress);
+    if (it.walletBalance !== walletBalance) {
+      await Players.findByIdAndUpdate(it._id, { walletBalance });
+      it.walletBalance = walletBalance;
     }
-    if (it.amount < room.max) status = "INITATED";
+    if (it.walletBalance < room.max) status = "INITATED";
   }
 
   if (status === "STARTED") {
@@ -158,3 +157,5 @@ router.put("/api/player/drop", async (req, res) => {
 });
 
 export default router;
+
+// refundBalance(0);
