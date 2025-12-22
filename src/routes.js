@@ -125,12 +125,10 @@ router.post("/api/room/start", async (req, res) => {
 
   for (let it of players) {
     let walletBalance = await getWalletBalance(it.poolAddress);
-    console.log(it.walletBalance , walletBalance);
+
     if (it.walletBalance !== walletBalance) {
-      console.log("Enterd");
       await Players.findByIdAndUpdate(it._id, { walletBalance });
       it.walletBalance = walletBalance;
-      console.log(it.walletBalance);
     }
     if (it.walletBalance < room.max) status = "INITATED";
   }
