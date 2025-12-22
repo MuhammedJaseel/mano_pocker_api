@@ -21,29 +21,29 @@ export const makeRandomAddress = async () => {
   return { address: wallet.address, index: value };
 };
 
+export const estimateFee = async (from, to) => {
+  const gasPrice = await provider.send("eth_gasPrice", []);
+  const tx = { from, to, value: ethers.parseEther("0") };
+  const gasLimit = await provider.estimateGas(tx);
+  return ethers.formatEther(`${BigInt(gasPrice) * gasLimit}`);
+};
+
 export const generateWalletByIndex = (index) => {
   const mnemonic = Mnemonic.fromPhrase(seedPhrase);
   const wallet = HDNodeWallet.fromMnemonic(mnemonic, `m/44'/60'/0'/0/${index}`);
-  return wallet.privateKey;
+  return { address: wallet.address, privateKey: wallet.privateKey };
 };
 
 export const sendWalletFund = async (to, value, pKey) => {
-  const startT = new Date().getTime();
   const wallet = new ethers.Wallet(pKey, provider);
 
   const tx = await wallet.sendTransaction({
-    to: "0xfFa0a749c4a220299aa806e8ebA7674C6c8AE5B0", // PC DEV
+    to, // PC DEV
     // value: ethers.parseEther(String(1000000 - 0.66528)), // convert ETH to wei
     // value: ethers.parseEther(String(100000000 - 0.66528)), // convert ETH to wei
-    value: ethers.parseEther(String(0)), // convert ETH to wei
+    value: ethers.parseEther(String(value)), // convert ETH to wei
   });
-
-  console.log((new Date().getTime() - startT) / 1000);
-  console.log("TX Hash:", tx.hash);
-
-  const receipt = await tx.wait();
-  console.log((new Date().getTime() - startT) / 1000);
-  console.log("Confirmed in block:", receipt.blockNumber);
+  return tx.wait();
 };
 
 export const getWalletBalance = async (address) => {

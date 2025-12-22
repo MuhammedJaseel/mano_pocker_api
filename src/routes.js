@@ -8,6 +8,7 @@ import {
   makeWalletAddress,
 } from "./services/chain.js";
 import { refundBalance } from "./services/poolWallet.js";
+import player from "./schemas/player.js";
 
 const router = express.Router();
 
@@ -143,15 +144,19 @@ router.post("/api/room/start", async (req, res) => {
 router.put("/api/player/drop", async (req, res) => {
   // "roomId": "1234",
   // "userId": "0",
-  // "userAddress": "Ox0000000000000000000000000000000000000000",
   const room = await Rooms.findOne({ roomId: req.body.roomId });
   if (!room) return res.status(400).json({ error: "Wrong roomId" });
 
   let _id = mongoose.Types.ObjectId(req.body.userId);
 
+  const player = await Players.findOne({ _id, roomId: req.body.roomId });
+  if (!player) return res.status(400).json({ error: "Wrong playeId" });
+
+  await refundBalance(player.poolAddressIndex, player.userAddress);
+
   await Players.findOneAndUpdate(
-    { _id, roomId: req.body.roomId, userAddress: req.body.userAddress },
-    { status: "DROPPED" }
+    { _id, roomId: req.body.roomId },
+    { status: "DROPED" }
   );
 
   res.json({ succes: true });
