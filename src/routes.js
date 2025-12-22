@@ -147,7 +147,7 @@ router.put("/api/player/drop", async (req, res) => {
   const room = await Rooms.findOne({ roomId: req.body.roomId });
   if (!room) return res.status(400).json({ error: "Wrong roomId" });
 
-  let _id = mongoose.Types.ObjectId(req.body.userId);
+  let _id = new mongoose.Types.ObjectId(req.body.userId);
 
   const player = await Players.findOne({ _id, roomId: req.body.roomId });
   if (!player) return res.status(400).json({ error: "Wrong playeId" });
