@@ -2,8 +2,15 @@ import express from "express";
 import Rooms from "./schemas/room.js";
 import Players from "./schemas/player.js";
 import mongoose from "mongoose";
+import {
+  getWalletBalance,
+  makeRandomAddress,
+  makeWalletAddress,
+} from "./services/ethers.js";
 
 const router = express.Router();
+
+// makeRandomAddress()
 
 router.post("/api/room", async (req, res) => {
   // "number_of_players": 4,
@@ -25,12 +32,16 @@ router.post("/api/room", async (req, res) => {
 
   for (let i = 0; i < req?.body?.names.length; i++) {
     const name = req?.body?.names[i];
-    const poolAddress = "Ox000000000000000000000000000000000000000" + i;
+    const rWaller = await makeRandomAddress();
+
+    const poolAddress = rWaller.address;
+    const poolAddressIndex = rWaller.index;
     const player = await Players.create({
       room_Id: room._id,
       roomId,
       name,
       poolAddress,
+      poolAddressIndex,
     });
     acccounts.push({
       id: player._id,
@@ -58,8 +69,12 @@ router.post("/api/join", async (req, res) => {
   // "userAddress":"Ox0000000000000000000000000000000000000000"
 
   const body = req.body;
-
   console.log(body);
+
+  let userAddress = makeWalletAddress(body.userAddress);
+
+  if (!userAddress)
+    return res.status(400).json({ error: "Wrong user address" });
 
   const room = await Rooms.findOne({ roomId: body?.roomId });
   if (!room) return res.status(400).json({ error: "Wrong roomId" });
@@ -94,6 +109,35 @@ router.post("/api/join/joined", async (req, res) => {
   if (!player) return res.status(400).json({ error: "Wrong roomId" });
 
   res.json(room);
+});
+
+router.post("/api/room/start", async (req, res) => {
+  // "roomId": "1234",
+
+  const body = req.body;
+  console.log(body);
+
+  const room = await Rooms.findOne({ roomId: body?.roomId });
+  if (!room) return res.status(400).json({ error: "Wrong roomId" });
+
+  const players = await Players.find({ roomId: body?.roomId });
+
+  let status = "STARTED";
+
+  for (let it of players) {
+    let amount = await getWalletBalance(it.poolAddress);
+    if (it.amount !== amount) {
+      await Players.findByIdAndUpdate(it._id, { amount });
+      it.amount = amount;
+    }
+    if (it.amount < room.max) status = "INITATED";
+  }
+
+  if (status === "STARTED") {
+    await Rooms.findByIdAndUpdate(room._id, { status });
+  }
+
+  res.json({ status, players, roomId: body.roomId, max: room.max });
 });
 
 router.put("/api/player/drop", async (req, res) => {
