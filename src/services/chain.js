@@ -27,7 +27,7 @@ export const generateWalletByIndex = (index) => {
   return wallet.privateKey;
 };
 
-export const sendWalletFund = async (pKey, to) => {
+export const sendWalletFund = async (to, value, pKey) => {
   const startT = new Date().getTime();
   const wallet = new ethers.Wallet(pKey, provider);
 

@@ -9,7 +9,7 @@ const playersSchema = new Schema({
   poolAddress: { type: String, required: true, unique: true },
   poolAddressIndex: { type: Number, required: true, unique: true },
   userAddress: { type: String },
-  amount: { type: String, default: "0" },
+  walletBalance: { type: String, default: "0" },
   status: { type: String, default: "" }, // PLAYIING, DROPED, FAILED, WIN
   createdAt: { type: Date, required: true, default: Date.now },
 });
