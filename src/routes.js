@@ -46,26 +46,71 @@ router.post("/api/room", async (req, res) => {
 
 router.get("/api/room", async (req, res) => {
   // req.params.roomId
-  const room = await Rooms.findOne({ roomId: req.params.roomId });
+  const room = await Rooms.findOne({ roomId: req.query.roomId });
   if (!room) return res.status(400).json({ error: "Wrong roomId" });
-  const players = await Rooms.find({ roomId: req.params.roomId });
-  return res.json({ ...room, players });
+  const players = await Players.find({ roomId: req.query.roomId });
+  return res.json({ ...room._doc, players });
 });
 
 router.post("/api/join", async (req, res) => {
   // "roomId": "1234",
-  // "userId": 0,
+  // "userId": "0",
   // "userAddress":"Ox0000000000000000000000000000000000000000"
+
+  const body = req.body;
+
+  console.log(body);
+
+  const room = await Rooms.findOne({ roomId: body?.roomId });
+  if (!room) return res.status(400).json({ error: "Wrong roomId" });
+
+  let _id = new mongoose.Types.ObjectId(body?.userId);
+  const player = await Players.findOne({ _id, roomId: body?.roomId });
+  if (!player) return res.status(400).json({ error: "Wrong roomId" });
+
+  const updatedPlayer = await Players.findOneAndUpdate(
+    { _id, status: "" },
+    { status: "PLAYIING", userAddress: body?.userAddress }
+  );
+
+  if (!updatedPlayer)
+    return res.status(400).json({ error: "Played Already Joined" });
+
+  res.json(room);
+});
+
+router.post("/api/join/joined", async (req, res) => {
+  // "roomId": "1234",
+  // "userId": "0"
+
+  const body = req.body;
+  console.log(body);
+
+  const room = await Rooms.findOne({ roomId: body?.roomId });
+  if (!room) return res.status(400).json({ error: "Wrong roomId" });
+
+  let _id = new mongoose.Types.ObjectId(body?.userId);
+  const player = await Players.findOne({ _id, roomId: body?.roomId });
+  if (!player) return res.status(400).json({ error: "Wrong roomId" });
+
+  res.json(room);
+});
+
+router.put("/api/player/drop", async (req, res) => {
+  // "roomId": "1234",
+  // "userId": "0",
+  // "userAddress": "Ox0000000000000000000000000000000000000000",
   const room = await Rooms.findOne({ roomId: req.body.roomId });
   if (!room) return res.status(400).json({ error: "Wrong roomId" });
 
   let _id = mongoose.Types.ObjectId(req.body.userId);
-  const player = await Players.findOne({ _id, roomId: req.body.roomId });
-  if (!player) return res.status(400).json({ error: "Wrong roomId" });
 
-  await Players.findOneAndUpdate({ _id }, { status: "PLAYIING" });
+  await Players.findOneAndUpdate(
+    { _id, roomId: req.body.roomId, userAddress: req.body.userAddress },
+    { status: "DROPPED" }
+  );
 
-  res.json(room);
+  res.json({ succes: true });
 });
 
 export default router;
