@@ -10,7 +10,7 @@ const roomsSchema = new Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Players",
   },
-  status: { type: String, required: true, default: "INITATED" }, // STATED, COMPLATED
+  status: { type: String, required: true, default: "INITATED" }, // STARTED, COMPLATED
   createdAt: { type: Date, required: true, default: Date.now }, // createdAt
 });
 

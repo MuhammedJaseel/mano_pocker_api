@@ -7,161 +7,233 @@ import {
   makeRandomAddress,
   makeWalletAddress,
 } from "./services/chain.js";
-import { refundBalance } from "./services/poolWallet.js";
-import player from "./schemas/player.js";
+import { refundBalanceAfter } from "./services/wallet.js";
+import { checkAndUpdatePoolWin } from "./services/room.js";
 
 const router = express.Router();
 
 router.post("/api/room", async (req, res) => {
-  // "number_of_players": 4,
-  // "names": ["Alice", "Bob", "Chloe", "Dan"],
-  // "max_amount": 200,
-  // "min_amount":
+  // {} "number_of_players": 4, "names": ["Alice", "Bob", "Chloe", "Dan"], "max_amount": 200, "min_amount": 5 }
+  const body = req.body;
+  console.log(body);
 
-  if (req?.body?.names?.length < 2 && req?.body?.names?.length > 9)
-    return res.status(400).json({ error: "Invalid Count" });
+  try {
+    if (body?.names?.length < 2 && body?.names?.length > 9)
+      return res.status(400).json({ error: "Invalid Count" });
 
-  const acccounts = [];
-  const roomId = new Date().getTime().toString(36);
-  const room = await Rooms.create({
-    roomId,
-    users: acccounts,
-    max: req?.body?.max_amount,
-    min: req?.body?.min_amount,
-  });
-
-  for (let i = 0; i < req?.body?.names.length; i++) {
-    const name = req?.body?.names[i];
-    const rWaller = await makeRandomAddress();
-
-    const poolAddress = rWaller.address;
-    const poolAddressIndex = rWaller.index;
-    const player = await Players.create({
-      room_Id: room._id,
+    const acccounts = [];
+    const roomId = new Date().getTime().toString(36);
+    const room = await Rooms.create({
       roomId,
-      name,
-      poolAddress,
-      poolAddressIndex,
+      users: acccounts,
+      max: body?.max_amount,
+      min: body?.min_amount,
     });
-    acccounts.push({
-      id: player._id,
-      name: player.name,
-      address: player.poolAddress,
-    });
+
+    for (let i = 0; i < body?.names.length; i++) {
+      const name = body?.names[i];
+      const rWaller = await makeRandomAddress();
+
+      const poolAddress = rWaller.address;
+      const poolAddressIndex = rWaller.index;
+      const player = await Players.create({
+        room_Id: room._id,
+        roomId,
+        name,
+        poolAddress,
+        poolAddressIndex,
+      });
+      acccounts.push({
+        id: player._id,
+        name: player.name,
+        address: player.poolAddress,
+      });
+    }
+
+    return res.json({ room_id: roomId, acccounts });
+  } catch (error) {
+    return res.status(400).json({ error: "Something Went Wrong" });
   }
-
-  const result = { room_id: roomId, acccounts };
-
-  return res.json(result);
 });
 
 router.get("/api/room", async (req, res) => {
   // req.params.roomId
-  const room = await Rooms.findOne({ roomId: req.query.roomId });
-  if (!room) return res.status(400).json({ error: "Wrong roomId" });
-  const players = await Players.find({ roomId: req.query.roomId });
-  return res.json({ ...room._doc, players });
+  try {
+    const room = await Rooms.findOne({ roomId: req.query.roomId });
+    if (!room) return res.status(400).json({ error: "Wrong roomId" });
+    const players = await Players.find(
+      { roomId: req.query.roomId },
+      {
+        name: 1,
+        poolAddress: 1,
+        poolAddressIndex: 1,
+        userAddress: 1,
+        walletBalance: 1,
+        userBalance: 1,
+        status: 1,
+        raises: 1,
+        raised: 1,
+      }
+    );
+    return res.json({ ...room._doc, players });
+  } catch (error) {
+    return res.status(400).json({ error: "Something Went Wrong" });
+  }
 });
 
 router.post("/api/join", async (req, res) => {
-  // "roomId": "1234",
-  // "userId": "0",
-  // "userAddress":"Ox0000000000000000000000000000000000000000"
-
+  // { "roomId": "1234", "userId": "0", "userAddress":"Ox00...00" }
   const body = req.body;
   console.log(body);
 
-  let userAddress = makeWalletAddress(body.userAddress);
+  try {
+    let userAddress = makeWalletAddress(body.userAddress);
 
-  if (!userAddress)
-    return res.status(400).json({ error: "Wrong user address" });
+    if (!userAddress)
+      return res.status(400).json({ error: "Wrong user address" });
 
-  const room = await Rooms.findOne({ roomId: body?.roomId });
-  if (!room) return res.status(400).json({ error: "Wrong roomId" });
+    const room = await Rooms.findOne({ roomId: body?.roomId });
+    if (!room) return res.status(400).json({ error: "Wrong roomId" });
 
-  let _id = new mongoose.Types.ObjectId(body?.userId);
-  const player = await Players.findOne({ _id, roomId: body?.roomId });
-  if (!player) return res.status(400).json({ error: "Wrong roomId" });
+    let _id = new mongoose.Types.ObjectId(body?.userId);
+    const player = await Players.findOne({ _id, roomId: body?.roomId });
+    if (!player) return res.status(400).json({ error: "Wrong roomId" });
 
-  const updatedPlayer = await Players.findOneAndUpdate(
-    { _id, status: "" },
-    { status: "PLAYIING", userAddress: body?.userAddress }
-  );
+    const updatedPlayer = await Players.findOneAndUpdate(
+      { _id, status: "" },
+      { status: "PLAYIING", userAddress: body?.userAddress }
+    );
 
-  if (!updatedPlayer)
-    return res.status(400).json({ error: "Played Already Joined" });
+    if (!updatedPlayer)
+      return res.status(400).json({ error: "Played Already Joined" });
 
-  res.json(room);
+    res.json(room);
+  } catch (error) {
+    return res.status(400).json({ error: "Something Went Wrong" });
+  }
 });
 
 router.post("/api/join/joined", async (req, res) => {
-  // "roomId": "1234",
-  // "userId": "0"
-
+  // { "roomId": "1234", "userId": "45GH578" }
   const body = req.body;
   console.log(body);
 
-  const room = await Rooms.findOne({ roomId: body?.roomId });
-  if (!room) return res.status(400).json({ error: "Wrong roomId" });
+  try {
+    const room = await Rooms.findOne({ roomId: body?.roomId });
+    if (!room) return res.status(400).json({ error: "Wrong roomId" });
 
-  let _id = new mongoose.Types.ObjectId(body?.userId);
-  const player = await Players.findOne({ _id, roomId: body?.roomId });
-  if (!player) return res.status(400).json({ error: "Wrong roomId" });
+    let _id = new mongoose.Types.ObjectId(body?.userId);
+    const player = await Players.findOne({ _id, roomId: body?.roomId });
+    if (!player) return res.status(400).json({ error: "Wrong roomId" });
 
-  res.json(room);
+    res.json(room);
+  } catch (error) {
+    return res.status(400).json({ error: "Something Went Wrong" });
+  }
 });
 
 router.post("/api/room/start", async (req, res) => {
-  // "roomId": "1234",
-
+  // { "roomId": "1234" }
   const body = req.body;
   console.log(body);
 
-  const room = await Rooms.findOne({ roomId: body?.roomId });
-  if (!room) return res.status(400).json({ error: "Wrong roomId" });
+  try {
+    const room = await Rooms.findOne({ roomId: body?.roomId });
+    if (!room) return res.status(400).json({ error: "Wrong roomId" });
 
-  const players = await Players.find({ roomId: body?.roomId });
+    const players = await Players.find({ roomId: body?.roomId });
 
-  let status = "STARTED";
+    let status = "STARTED";
 
-  for (let it of players) {
-    let walletBalance = await getWalletBalance(it.poolAddress);
+    for (let it of players) {
+      let walletBalance = await getWalletBalance(it.poolAddress);
 
-    if (it.walletBalance !== walletBalance) {
-      await Players.findByIdAndUpdate(it._id, { walletBalance });
-      it.walletBalance = walletBalance;
+      if (it.walletBalance !== walletBalance) {
+        await Players.findOneAndUpdate(
+          { _id: it._id, status: "" },
+          { walletBalance }
+        );
+        it.walletBalance = walletBalance;
+      }
+      if (it.walletBalance < room.max) status = "INITATED";
     }
-    if (it.walletBalance < room.max) status = "INITATED";
-  }
 
-  if (status === "STARTED") {
-    await Rooms.findByIdAndUpdate(room._id, { status });
-  }
+    if (status === "STARTED")
+      await Rooms.findByIdAndUpdate(room._id, { status });
 
-  res.json({ status, players, roomId: body.roomId, max: room.max });
+    res.json({ status, players, roomId: body.roomId, max: room.max });
+  } catch (error) {
+    return res.status(400).json({ error: "Something Went Wrong" });
+  }
+});
+
+router.put("/api/player/raise", async (req, res) => {
+  // { "roomId": "1234", "userId": "0", "amount": 0 }
+  const body = req.body;
+  console.log(body);
+
+  try {
+    const room = await Rooms.findOne({ roomId: body.roomId });
+    if (!room) return res.status(400).json({ error: "Wrong roomId" });
+
+    let _id = new mongoose.Types.ObjectId(body.userId);
+
+    const player = await Players.findOne({
+      _id,
+      roomId: body.roomId,
+      status: "PLAYIING",
+    });
+    if (!player) return res.status(400).json({ error: "Wrong playeId" });
+
+    if (player.raises.length === 0 && (body?.amount || 0) < room.min) {
+      return res.status(400).json({ error: "Minumum is " + room.min });
+    }
+    if ((body?.amount || 0) + player.raised > room.max) {
+      return res.status(400).json({ error: "Maximum is " + room.max });
+    }
+
+    // TODO: need to manage the paralel request
+    const updatedPlayer = await Players.findOneAndUpdate(
+      { _id, roomId: body.roomId, raised: player.raised },
+      { $push: { raises: body.amount }, raised: body.amount + player.raised }
+    );
+
+    res.json({ succes: true });
+  } catch (error) {
+    return res.status(400).json({ error: "Something Went Wrong" });
+  }
 });
 
 router.put("/api/player/drop", async (req, res) => {
-  // "roomId": "1234",
-  // "userId": "0",
-  const room = await Rooms.findOne({ roomId: req.body.roomId });
-  if (!room) return res.status(400).json({ error: "Wrong roomId" });
+  // { "roomId": "1234", "userId": "0" }
+  const body = req.body;
+  console.log(body);
+  try {
+    const room = await Rooms.findOne({ roomId: body.roomId });
+    if (!room) return res.status(400).json({ error: "Wrong roomId" });
 
-  let _id = new mongoose.Types.ObjectId(req.body.userId);
+    let _id = new mongoose.Types.ObjectId(body.userId);
 
-  const player = await Players.findOne({ _id, roomId: req.body.roomId });
-  if (!player) return res.status(400).json({ error: "Wrong playeId" });
+    const player = await Players.findOne({ _id, roomId: body.roomId });
+    if (!player) return res.status(400).json({ error: "Wrong playeId" });
 
-  await refundBalance(player.poolAddressIndex, player.userAddress);
+    await refundBalanceAfter(
+      player.poolAddressIndex,
+      player.userAddress,
+      player.raised
+    );
 
-  await Players.findOneAndUpdate(
-    { _id, roomId: req.body.roomId },
-    { status: "DROPED" }
-  );
+    await Players.findOneAndUpdate(
+      { _id, roomId: body.roomId },
+      { status: "DROPED" }
+    );
 
-  res.json({ succes: true });
+    checkAndUpdatePoolWin(body.roomId);
+
+    res.json({ succes: true });
+  } catch (error) {
+    return res.status(400).json({ error: "Something Went Wrong" });
+  }
 });
 
 export default router;
-
-// refundBalance(0);

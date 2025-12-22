@@ -5,11 +5,10 @@ import {
   sendWalletFund,
 } from "./chain.js";
 
-export const refundBalance = async (index, toAddress) => {
+export const refundBalanceAfter = async (index, toAddress, after) => {
   const wallet = generateWalletByIndex(index);
   const balance = await getWalletBalance(wallet.address);
   const fee = await estimateFee(wallet.address, toAddress);
-  const value = balance - fee;
-  if (!(value < 0)) await sendWalletFund(to, value, wallet.privateKey);
-  return { succes: true };
+  const value = balance - fee - after;
+  if (!(value < 0)) await sendWalletFund(toAddress, value, wallet.privateKey);
 };
