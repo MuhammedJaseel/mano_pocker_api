@@ -168,7 +168,7 @@ router.post("/api/room/start", async (req, res) => {
 });
 
 router.put("/api/player/raise", async (req, res) => {
-  // { "roomId": "1234", "userId": "0", "amount": 0 }
+  // { "roomId": "1234", "userId": "0", "amount": 0, action: "CALL"|| "BET || RAISE }
   const body = req.body;
   console.log(body);
 
@@ -195,7 +195,10 @@ router.put("/api/player/raise", async (req, res) => {
     // TODO: need to manage the paralel request
     const updatedPlayer = await Players.findOneAndUpdate(
       { _id, roomId: body.roomId, raised: player.raised },
-      { $push: { raises: body.amount }, raised: body.amount + player.raised }
+      {
+        $push: { raises: { amount: body.amount, action: body.action } },
+        raised: body.amount + player.raised,
+      }
     );
 
     res.json({ succes: true });

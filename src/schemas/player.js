@@ -12,7 +12,10 @@ const playersSchema = new Schema({
   walletBalance: { type: String, default: "0" },
   userBalance: { type: String, default: "0" },
   status: { type: String, default: "" }, // PLAYIING, DROPED, FAILED, WIN
-  raises: { type: [Number], default: [] },
+  raises: {
+    type: [{ action: String, amount: Number }],
+    default: [],
+  },
   raised: { type: Number, default: 0 },
   createdAt: { type: Date, required: true, default: Date.now },
 });
