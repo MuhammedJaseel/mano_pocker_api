@@ -13,6 +13,7 @@ import { checkAndUpdatePoolWin } from "./services/room.js";
 const router = express.Router();
 
 router.post("/api/room", async (req, res) => {
+  console.log("/api/room");
   // {} "number_of_players": 4, "names": ["Alice", "Bob", "Chloe", "Dan"], "max_amount": 200, "min_amount": 5 }
   const body = req.body;
   console.log(body);
@@ -57,6 +58,7 @@ router.post("/api/room", async (req, res) => {
 });
 
 router.get("/api/room", async (req, res) => {
+  console.log("/api/room");
   // req.params.roomId
   try {
     const room = await Rooms.findOne({ roomId: req.query.roomId });
@@ -82,6 +84,7 @@ router.get("/api/room", async (req, res) => {
 });
 
 router.post("/api/join", async (req, res) => {
+  console.log("/api/join");
   // { "roomId": "1234", "userId": "0", "userAddress":"Ox00...00" }
   const body = req.body;
   console.log(body);
@@ -101,7 +104,7 @@ router.post("/api/join", async (req, res) => {
 
     const updatedPlayer = await Players.findOneAndUpdate(
       { _id, status: "" },
-      { status: "PLAYIING", userAddress: body?.userAddress }
+      { status: "JOINED", userAddress: body?.userAddress }
     );
 
     if (!updatedPlayer)
@@ -114,6 +117,7 @@ router.post("/api/join", async (req, res) => {
 });
 
 router.post("/api/join/joined", async (req, res) => {
+  console.log("/api/join/joined");
   // { "roomId": "1234", "userId": "45GH578" }
   const body = req.body;
   console.log(body);
@@ -133,6 +137,7 @@ router.post("/api/join/joined", async (req, res) => {
 });
 
 router.post("/api/room/start", async (req, res) => {
+  console.log("/api/room/start");
   // { "roomId": "1234" }
   const body = req.body;
   console.log(body);
@@ -149,13 +154,11 @@ router.post("/api/room/start", async (req, res) => {
       let walletBalance = await getWalletBalance(it.poolAddress);
 
       if (it.walletBalance !== walletBalance) {
-        // console.log(
         await Players.findOneAndUpdate(
-          { _id: it._id, status: "" },
-          { _id: it._id },
-          { walletBalance }
+          { _id: it._id, status: "JOINED" },
+          { status: "PLAYING", walletBalance }
         );
-        // );
+
         it.walletBalance = walletBalance;
       }
       if (it.walletBalance < room.max) status = "INITATED";
@@ -171,6 +174,7 @@ router.post("/api/room/start", async (req, res) => {
 });
 
 router.put("/api/player/raise", async (req, res) => {
+  console.log("/api/player/raise");
   // { "roomId": "1234", "userId": "0", "amount": 0, action: "CALL"|| "BET || RAISE }
   const body = req.body;
   console.log(body);
@@ -181,10 +185,12 @@ router.put("/api/player/raise", async (req, res) => {
 
     let _id = new mongoose.Types.ObjectId(body.userId);
 
+    console.log(_id);
+
     const player = await Players.findOne({
       _id,
       roomId: body.roomId,
-      status: "PLAYIING",
+      status: "PLAYING",
     });
     if (!player) return res.status(400).json({ error: "Wrong playeId" });
 
@@ -212,6 +218,7 @@ router.put("/api/player/raise", async (req, res) => {
 });
 
 router.put("/api/player/drop", async (req, res) => {
+  console.log("/api/player/drop");
   // { "roomId": "1234", "userId": "0" }
   const body = req.body;
   console.log(body);

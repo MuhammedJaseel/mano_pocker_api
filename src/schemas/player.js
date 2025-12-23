@@ -11,7 +11,7 @@ const playersSchema = new Schema({
   userAddress: { type: String },
   walletBalance: { type: String, default: "0" },
   userBalance: { type: String, default: "0" },
-  status: { type: String, default: "" }, // PLAYIING, DROPED, FAILED, WIN
+  status: { type: String, default: "" }, // JOINED, PLAYING, DROPED, FAILED, WIN
   raises: {
     type: [{ action: String, amount: Number }],
     default: [],

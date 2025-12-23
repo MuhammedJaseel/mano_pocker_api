@@ -15,7 +15,7 @@ export const checkAndUpdatePoolWin = async (roomId) => {
       for (let player of players_)
         await refundBalanceAfter(
           player.poolAddressIndex,
-          players[0].poolAddress,
+          players[0].userAddress,
           0
         );
       await Rooms.findByIdAndUpdate(room._id, {
