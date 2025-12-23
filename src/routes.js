@@ -201,7 +201,8 @@ router.put("/api/player/raise", async (req, res) => {
       }
     );
 
-    res.json({ succes: true });
+    if (updatedPlayer) return res.json({ succes: true });
+    throw {};
   } catch (error) {
     return res.status(400).json({ error: "Something Went Wrong" });
   }
