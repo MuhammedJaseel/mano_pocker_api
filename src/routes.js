@@ -149,10 +149,13 @@ router.post("/api/room/start", async (req, res) => {
       let walletBalance = await getWalletBalance(it.poolAddress);
 
       if (it.walletBalance !== walletBalance) {
+        // console.log(
         await Players.findOneAndUpdate(
           { _id: it._id, status: "" },
+          { _id: it._id },
           { walletBalance }
         );
+        // );
         it.walletBalance = walletBalance;
       }
       if (it.walletBalance < room.max) status = "INITATED";
