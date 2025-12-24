@@ -43,7 +43,7 @@ export const sendWalletFund = async (to, value, pKey) => {
     // value: ethers.parseEther(String(100000000 - 0.66528)), // convert ETH to wei
     value: ethers.parseEther(String(value)), // convert ETH to wei
   });
-  return tx.wait();
+  // return tx.wait();
 };
 
 export const getWalletBalance = async (address) => {

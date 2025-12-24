@@ -10,6 +10,7 @@ const roomsSchema = new Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Players",
   },
+  round: { type: String, required: true, default: "PREFLOP" }, // PREFLOP, FLOP, TURN, RIVER, SHOWDOWN.
   status: { type: String, required: true, default: "INITATED" }, // STARTED, COMPLATED
   createdAt: { type: Date, required: true, default: Date.now }, // createdAt
 });

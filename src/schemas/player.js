@@ -10,13 +10,13 @@ const playersSchema = new Schema({
   poolAddressIndex: { type: Number, required: true, unique: true },
   userAddress: { type: String },
   walletBalance: { type: String, default: "0" },
-  userBalance: { type: String, default: "0" },
   status: { type: String, default: "" }, // JOINED, PLAYING, DROPED, FAILED, WIN
   raises: {
     type: [{ action: String, amount: Number }],
     default: [],
   },
   raised: { type: Number, default: 0 },
+  openToBet: { type: Boolean, default: true },
   createdAt: { type: Date, required: true, default: Date.now },
 });
 
