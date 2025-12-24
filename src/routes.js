@@ -54,9 +54,20 @@ router.post("/api/room", async (req, res) => {
 });
 
 router.get("/api/room", async (req, res) => {
-  // req.params.
+  // req.params.roomId
   try {
-    const room = await Rooms.findOne({ roomId: req.query.roomId });
+    const room = await Rooms.findOne(
+      { roomId: req.query.roomId },
+      {
+        roomId: 1,
+        max: 1,
+        min: 1,
+        winPlayerId: 1,
+        round: 1,
+        status: 1,
+        createdAt: 1,
+      }
+    );
     if (!room) return res.status(400).json({ error: "Wrong roomId" });
     const players = await Players.find(
       { roomId: req.query.roomId },
