@@ -40,7 +40,6 @@ const wss = new WebSocketServer({ server });
 const groups = new Map();
 
 wss.on("connection", (ws, req) => {
-  console.log(".............");
   const roomId = req.url?.split("=")?.[1];
   if (!roomId) return;
 
