@@ -35,43 +35,45 @@ const server = app.listen(PORT, () =>
   console.log(`Server running on port ${PORT}`)
 );
 
-// const wss = new WebSocketServer({ server });
+const wss = new WebSocketServer({ server });
 
-// const groups = new Map();
+const groups = new Map();
 
-// wss.on("connection", (ws, req) => {
-//   console.log(".............");
-//   const roomId = req.url?.split("=")?.[1];
-//   if (!roomId) return;
+wss.on("connection", (ws, req) => {
+  console.log(".............");
+  const roomId = req.url?.split("=")?.[1];
+  if (!roomId) return;
 
-//   if (!groups.has(roomId)) {
-//     groups.set(roomId, new Set());
-//   }
+  if (!groups.has(roomId)) {
+    groups.set(roomId, new Set());
+  }
 
-//   groups.get(roomId).add(ws);
+  groups.get(roomId).add(ws);
 
-//   console.log("Client joined group:", roomId);
+  console.log("Client joined group:", roomId);
 
-//   ws.on("message", (msg) => {});
-//   ws.on("close", () => {
-//     groups.get(roomId).delete(ws);
-//     console.log("Client left:", roomId);
+  ws.on("message", (msg) => {});
+  ws.on("close", () => {
+    groups.get(roomId).delete(ws);
+    console.log("Client left:", roomId);
 
-//     // clean empty groups
-//     if (groups.get(roomId).size === 0) {
-//       groups.delete(roomId);
-//     }
-//   });
-// });
+    // clean empty groups
+    if (groups.get(roomId).size === 0) {
+      groups.delete(roomId);
+    }
+  });
+});
 
 export function sendToGroup(roomId, message) {
-  // try {
-  //   if (!groups.has(roomId)) return;
+  try {
+    if (!groups.has(roomId)) return;
 
-  //   for (const client of groups.get(roomId)) {
-  //     if (client.readyState === 1) {
-  //       client.send(message);
-  //     }
-  //   }
-  // } catch (error) {}
+    for (const client of groups.get(roomId)) {
+      if (client.readyState === 1) {
+        client.send(message);
+      }
+    }
+  } catch (error) {}
 }
+
+export default app;
